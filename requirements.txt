@@ -1,3 +1,4 @@
+altair==4.0.1
 jupyter==1.0.0
 jupyterlab==2.0.1
 nb-black==1.0.7
