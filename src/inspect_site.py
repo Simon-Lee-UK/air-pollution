@@ -52,7 +52,7 @@ def preview_data(
     preview_data : pandas.DataFrame
         Returns preview sample of air pollution data as a pandas DataFrame if available, otherwise returns None.
     valid_years : list of int
-        A list of those years for which data was successfully downloaded
+        A list of those years for which data was successfully downloaded.
     """
     preview_data = None
     preview_year = None

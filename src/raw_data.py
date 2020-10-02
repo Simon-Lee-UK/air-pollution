@@ -11,7 +11,7 @@ def get_single_year(
     file_format="csv",
 ):
     """
-    Downloads air pollution data from uk-air.defra.gov.uk/ for the input location and year.
+    Downloads air pollution data from uk-air.defra.gov.uk for the input location and year.
 
     If data is found at the URL defined with the function arguments, raw data is returned as a pandas DataFrame.
     Where data cannot be found, a warning message is displayed to the user quoting the invalid URL and the function
