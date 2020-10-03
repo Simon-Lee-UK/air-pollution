@@ -8,6 +8,10 @@ sleep_time = 0.75
 def get_reference_columns(
     site_id,
     years_of_interest,
+    header_lines=4,
+    fixed_url="https://uk-air.defra.gov.uk/data_files/site_data/",
+    sep="_",
+    file_format="csv",
     status_str="status",
     unit_str="unit",
     status_offset=-1,
@@ -27,6 +31,17 @@ def get_reference_columns(
         The consistent identifier associated with the air pollution measurement site of interest e.g. 'OX8'.
     years_of_interest : list of int
         The years of data that are of interest, reference column titles are extracted from the first valid year of data.
+    header_lines : int
+        The row number (in raw .csv file) to use as column titles in the output DataFrame; default value = 4.
+    fixed_url : str
+        The consistent URL string to which 'site_id' and 'year' are appended in order to fetch data from the Defra site;
+        by default, the fixed URL is: 'https://uk-air.defra.gov.uk/data_files/site_data/'.
+    sep : str
+        The consistent separator that splits 'site_id' and 'year' in URLs targeted to download data from the Defra site;
+        by default, the separator is an underscore: '_'.
+    file_format : str
+        The file format to be downloaded from the Defra site; defines the file extension appended to the end of the
+        queried request URL; by default, data is available and downloaded as 'csv' files.
     status_str : str
         The consistent string appearing in all metadata column titles that contain status information for a
         corresponding measurement column; default value = 'status'.
@@ -44,13 +59,27 @@ def get_reference_columns(
 
     Returns
     -------
-    reference_cols : list of str / None
+    reference_cols : list of str
         A list of descriptive column titles extracted from the most recently available year of data.
+
+    Raises
+    ------
+    ValueError
+        Raised when the URLs specified by function arguments lead to zero successful data downloads.
+
     """
-    nrows = 1
+    nrows = 1  # defines the number of rows to be read-in for each data set, to extract column titles: only require one
     years_of_interest.sort(reverse=True)
     for indv_year in years_of_interest:
-        reference_year = get_single_year(site_id, indv_year, nrows=nrows)
+        reference_year = get_single_year(
+            site_id,
+            indv_year,
+            nrows=nrows,
+            header_lines=header_lines,
+            fixed_url=fixed_url,
+            sep=sep,
+            file_format=file_format,
+        )
         if reference_year is not None:
             reference_year = rename_status_and_unit_columns(
                 reference_year,
@@ -66,7 +95,11 @@ def get_reference_columns(
                 sleep_time
             )  # creates interval between requests to uk-air.defra.gov.uk
 
-    return None
+    raise ValueError(
+        f"Could not read data from: {fixed_url} "
+        f"for any years: {years_of_interest[-1]} - {years_of_interest[0]}\n"
+        f"Check the URL to ensure location code, years and file extension are all valid!"
+    )
 
 
 def split_column_types(reference_cols, status_str="status", unit_str="unit"):
