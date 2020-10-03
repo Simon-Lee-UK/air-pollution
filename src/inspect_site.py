@@ -115,7 +115,11 @@ def monitoring_site_summary(
     unit_offset=-2,
 ):
     """
-    Desc
+    Returns a dictionary containing each individual year's full set of air pollution data and summaries comparing years.
+
+    Dictionary keys are the single year of interest, provided as an integer; corresponding value is that year's full
+    air pollution DataFrame. Three summary tables are returned comparing measurements, statuses and units across
+    years of interest respectively.
 
     Parameters
     ----------
@@ -152,13 +156,13 @@ def monitoring_site_summary(
     Returns
     -------
     data_dict : dict of pandas.DataFrame
-        Desc
+        A dictionary containing each year's full set of air pollution data, accessed using a year of data as the key.
     measurement_summary : pandas.DataFrame
-        Desc
+        A summary DataFrame reporting presence/absence of different measurement columns for all years of data.
     status_summary : pandas.DataFrame
-        Desc
+        A summary DataFrame reporting consistency/missingness within status columns for all years of data.
     unit_summary : pandas.DataFrame
-        Desc
+        A summary DataFrame reporting consistency/missingness within unit columns for all years of data.
     """
     reference_cols = get_reference_columns(
         site_id,
@@ -176,10 +180,14 @@ def monitoring_site_summary(
     year_col_title = "Data (Year)"  # defines the column title for column holding data years in summary tables
 
     # creates empty summary table to hold 'missingness' data for each measurement column and year
-    measurement_summary = create_empty_summary(measurement_cols, years_of_interest, year_col_title)
+    measurement_summary = create_empty_summary(
+        measurement_cols, years_of_interest, year_col_title
+    )
 
     # creates empty summary table to hold 'missingness' and consistency data for each status column and year
-    status_summary = create_empty_summary(status_cols, years_of_interest, year_col_title)
+    status_summary = create_empty_summary(
+        status_cols, years_of_interest, year_col_title
+    )
 
     # creates empty summary table to hold 'missingness' and consistency data for each unit column and year
     unit_summary = create_empty_summary(unit_cols, years_of_interest, year_col_title)
@@ -203,9 +211,15 @@ def monitoring_site_summary(
         )  # downloads full data set for single year of data (or returns null if no data found at specified URL)
         if single_year is None:
             # where data could not be accessed, marks summary DataFrames accordingly with: 'no data'
-            measurement_summary = mark_invalid_year(measurement_summary, indv_year, idx, year_col_title)
-            status_summary = mark_invalid_year(status_summary, indv_year, idx, year_col_title)
-            unit_summary = mark_invalid_year(unit_summary, indv_year, idx, year_col_title)
+            measurement_summary = mark_invalid_year(
+                measurement_summary, indv_year, idx, year_col_title
+            )
+            status_summary = mark_invalid_year(
+                status_summary, indv_year, idx, year_col_title
+            )
+            unit_summary = mark_invalid_year(
+                unit_summary, indv_year, idx, year_col_title
+            )
         else:
             single_year = rename_status_and_unit_columns(
                 single_year,
@@ -219,17 +233,21 @@ def monitoring_site_summary(
 
             sy_measurement_cols, sy_status_cols, sy_unit_cols = split_column_types(
                 single_year_cols, status_str=status_str, unit_str=unit_str
-            )  # from all reference col for a single year, returns separate lists of measurement, status and unit cols
+            )  # from all reference cols for a single year, returns separate lists of measurement, status and unit cols
 
-            # MAKE SURE TO CHECK ORDERING OF ARGUMENTS
             measurement_summary = fill_measurement_summary_row(
-                measurement_summary, idx, indv_year, sy_measurement_cols
+                measurement_summary, indv_year, idx, sy_measurement_cols, year_col_title
             )
             status_summary = fill_status_summary_row(
-                status_summary, idx, indv_year, single_year, sy_status_cols
+                status_summary,
+                indv_year,
+                idx,
+                single_year,
+                sy_status_cols,
+                year_col_title,
             )
             unit_summary = fill_unit_summary_row(
-                unit_summary, idx, indv_year, single_year, sy_unit_cols
+                unit_summary, indv_year, idx, single_year, sy_unit_cols, year_col_title
             )
 
             data_dict[indv_year] = single_year
@@ -238,7 +256,9 @@ def monitoring_site_summary(
             sleep_duration
         )  # creates interval between requests to uk-air.defra.gov.uk
 
-    return None
+    measurement_summary.fillna(value=False, inplace=True)
+
+    return data_dict, measurement_summary, status_summary, unit_summary
 
 
 def create_empty_summary(summary_cols, years_of_interest, year_col_title):
@@ -302,53 +322,130 @@ def mark_invalid_year(input_summary, invalid_year, row_idx, year_col_title):
     return output_summary
 
 
-# def fill_measurement_summary_row(input_summary, year, row_idx, measurement_cols):
-#     """Populates a row of the measurement summary table for the input year's data."""
-#     output_summary = input_summary.copy()
-#     output_summary.loc[row_idx, "Data (Year)"] = year
-#     for col in measurement_cols:
-#         output_summary.loc[row_idx, col] = True
-#
-#     return output_summary
+def fill_measurement_summary_row(
+    input_summary, year, row_idx, measurement_cols, year_col_title
+):
+    """
+    Using the measurement columns for a single year of data, populates that year's row in the measurement summary table.
+
+    Parameters
+    ----------
+    input_summary : pandas.DataFrame
+        A partially-filled summary DataFrame for measurement columns.
+    year : int
+        The year to be filled in the summary DataFrame.
+    row_idx : int
+        The row index corresponding to the input year for which summary data will be entered.
+    measurement_cols : str
+        A list of all measurement column titles appearing in the data set for the single input year.
+    year_col_title : str
+        The title of the summary DataFrame's column reporting years of interest.
+
+    Returns
+    -------
+    output_summary : pandas.DataFrame
+        The input summary DataFrame updated to report 'True' for all measurement columns that are present in the input
+        year's data set.
+    """
+    output_summary = input_summary.copy()
+    output_summary.loc[row_idx, year_col_title] = year
+
+    # adds/updates measurement columns extracted from the current year's data set in the summary table as True (present)
+    for col in measurement_cols:
+        output_summary.loc[row_idx, col] = True
+
+    return output_summary
 
 
-# def fill_status_summary_row(
-#     input_summary, year, row_idx, single_year_data, status_cols
-# ):
-#     """Populates a row of the unit summary table for the input year's data."""
-#     output_summary = input_summary.copy()
-#     output_summary.loc[row_idx, "Data (Year)"] = year
-#     for col in status_cols:
-#         unique_count = single_year_data[col].nunique(dropna=True)
-#         unique_count_with_nan = single_year_data[col].nunique(dropna=False)
-#         if unique_count == 1 and unique_count_with_nan == 2:
-#             single_real_value = single_year_data.loc[
-#                 single_year_data[col].first_valid_index(), col
-#             ]  # extracts the first non-NaN value from the column
-#             output_summary.loc[row_idx, col] = f"{single_real_value}  (+ NaNs)"
-#         elif unique_count == 1 and unique_count_with_nan == 1:
-#             output_summary.loc[row_idx, col] = single_year_data.loc[0, col]
-#         else:
-#             output_summary.loc[row_idx, col] = f"{unique_count} different values"
-#
-#     return output_summary
+def fill_status_summary_row(
+    input_summary, year, row_idx, single_year_data, status_cols, year_col_title
+):
+    """
+    Using the status columns for a single year of data, populates that year's row in the status summary table.
+
+    Parameters
+    ----------
+    input_summary : pandas.DataFrame
+        A partially-filled summary DataFrame for status columns.
+    year : int
+        The year to be filled in the summary DataFrame.
+    row_idx : int
+        The row index corresponding to the input year for which summary data will be entered.
+    single_year_data : pandas.DataFrame
+        The full air pollution data set for the input year.
+    status_cols : str
+        A list of all status column titles appearing in the data set for the single input year.
+    year_col_title : str
+        The title of the summary DataFrame's column reporting years of interest.
+
+    Returns
+    -------
+    output_summary : pandas.DataFrame
+        The input summary DataFrame updated for the input year to report:
+            - The single status value observed in a column (if only a single value is observed in that column)
+            - The number of different status values observed in a column (if > 1 values are observed in that column)
+            - The presence of NaN values in otherwise single-valued columns
+    """
+    output_summary = input_summary.copy()
+    output_summary.loc[row_idx, year_col_title] = year
+    for col in status_cols:
+        unique_count = single_year_data[col].nunique(dropna=True)
+        unique_count_with_nan = single_year_data[col].nunique(dropna=False)
+        if unique_count == 1 and unique_count_with_nan == 2:
+            single_real_value = single_year_data.loc[
+                single_year_data[col].first_valid_index(), col
+            ]  # extracts the first non-NaN value from the column
+            output_summary.loc[row_idx, col] = f"{single_real_value}  (+ NaNs)"
+        elif unique_count == 1 and unique_count_with_nan == 1:
+            output_summary.loc[row_idx, col] = single_year_data.loc[0, col]
+        else:
+            output_summary.loc[row_idx, col] = f"{unique_count} different values"
+
+    return output_summary
 
 
-# def fill_unit_summary_row(input_summary, year, row_idx, single_year_data, unit_cols):
-#     """Populates a row of the unit summary table for the input year's data."""
-#     output_summary = input_summary.copy()
-#     output_summary.loc[row_idx, "Data (Year)"] = year
-#     for col in unit_cols:
-#         unique_count = single_year_data[col].nunique(dropna=True)
-#         unique_count_with_nan = single_year_data[col].nunique(dropna=False)
-#         if unique_count == 1 and unique_count_with_nan == 2:
-#             single_real_value = single_year_data.loc[
-#                 single_year_data[col].first_valid_index(), col
-#             ]  # extracts the first non-NaN value from the column
-#             output_summary.loc[row_idx, col] = f"{single_real_value}  (+ NaNs)"
-#         elif unique_count == 1 and unique_count_with_nan == 1:
-#             output_summary.loc[row_idx, col] = single_year_data.loc[0, col]
-#         else:
-#             output_summary.loc[row_idx, col] = f"{unique_count} different values"
-#
-#     return output_summary
+def fill_unit_summary_row(
+    input_summary, year, row_idx, single_year_data, unit_cols, year_col_title
+):
+    """
+    Using the unit columns for a single year of data, populates that year's row in the unit summary table.
+
+    Parameters
+    ----------
+    input_summary : pandas.DataFrame
+        A partially-filled summary DataFrame for unit columns.
+    year : int
+        The year to be filled in the summary DataFrame.
+    row_idx : int
+        The row index corresponding to the input year for which summary data will be entered.
+    single_year_data : pandas.DataFrame
+        The full air pollution data set for the input year.
+    unit_cols : str
+        A list of all unit column titles appearing in the data set for the single input year.
+    year_col_title : str
+        The title of the summary DataFrame's column reporting years of interest.
+
+    Returns
+    -------
+    output_summary : pandas.DataFrame
+        The input summary DataFrame updated for the input year to report:
+            - The single unit value observed in a column (if only a single value is observed in that column)
+            - The number of different unit values observed in a column (if > 1 values are observed in that column)
+            - The presence of NaN values in otherwise single-valued columns
+    """
+    output_summary = input_summary.copy()
+    output_summary.loc[row_idx, year_col_title] = year
+    for col in unit_cols:
+        unique_count = single_year_data[col].nunique(dropna=True)
+        unique_count_with_nan = single_year_data[col].nunique(dropna=False)
+        if unique_count == 1 and unique_count_with_nan == 2:
+            single_real_value = single_year_data.loc[
+                single_year_data[col].first_valid_index(), col
+            ]  # extracts the first non-NaN value from the column
+            output_summary.loc[row_idx, col] = f"{single_real_value}  (+ NaNs)"
+        elif unique_count == 1 and unique_count_with_nan == 1:
+            output_summary.loc[row_idx, col] = single_year_data.loc[0, col]
+        else:
+            output_summary.loc[row_idx, col] = f"{unique_count} different values"
+
+    return output_summary
