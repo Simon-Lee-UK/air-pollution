@@ -2,7 +2,7 @@ import time
 import pandas as pd
 from src.raw_data import get_single_year
 
-sleep_time = 0.75
+sleep_duration = 0.75
 
 
 def get_reference_columns(
@@ -92,7 +92,7 @@ def get_reference_columns(
             return reference_cols
         else:
             time.sleep(
-                sleep_time
+                sleep_duration
             )  # creates interval between requests to uk-air.defra.gov.uk
 
     raise ValueError(
@@ -134,35 +134,6 @@ def split_column_types(reference_cols, status_str="status", unit_str="unit"):
         col for col in reference_cols if col not in status_cols and col not in unit_cols
     ]
     return measurement_cols, status_cols, unit_cols
-
-
-def create_empty_summary(summary_cols, years_of_interest):
-    """
-    Returns empty summary table to hold 'missingness' and consistency data for an input set of columns.
-
-    Parameters
-    ----------
-    summary_cols : list of str
-        The full list of column titles for which a summary DataFrame will be created.
-    years_of_interest : list of int
-        The years of data that are of interest, used to define how many rows are required in the summary DataFrame.
-
-    Returns
-    -------
-    summary_df : pandas.DataFrame
-        A DataFrame with the first column reporting each year of interest; subsequent columns correspond to each input
-        column and contain value = False for all rows; this summary df can later be populated by looping through years
-        of interest and their available columns: updating values in the summary df to True where that combination of
-        year and column title exists.
-    """
-    summary_dict = {"Data (Year)": "blank"}
-    missing_column_placeholders = {col: False for col in summary_cols}
-    summary_dict.update(missing_column_placeholders)
-    summary_df = pd.DataFrame(
-        summary_dict, index=[idx for idx in range(len(years_of_interest))]
-    )
-
-    return summary_df
 
 
 def rename_status_and_unit_columns(
