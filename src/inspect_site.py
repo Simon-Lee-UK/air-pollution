@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 from src.raw_data import get_single_year
-from src.process_data import get_reference_columns, split_column_types
+from src.process_data import get_reference_columns, split_column_types, create_empty_summary
 
 sleep_time = 0.75
 
@@ -166,27 +166,12 @@ def monitoring_site_summary(
     )  # from all reference columns, returns separate lists of measurement, status and unit columns
 
     # creates empty summary table to hold 'missingness' data for each measurement column and year
-    m_summary_dict = {"Data (Year)": "blank"}
-    indv_year_measurements = {m_col: False for m_col in measurement_cols}
-    m_summary_dict.update(indv_year_measurements)
-    measurement_summary = pd.DataFrame(
-        m_summary_dict, index=[idx for idx in range(len(years_of_interest))]
-    )
+    measurement_summary = create_empty_summary(measurement_cols, years_of_interest)
 
     # creates empty summary table to hold 'missingness' and consistency data for each status column and year
-    s_summary_dict = {"Data (Year)": "blank"}
-    indv_year_statuses = {s_col: False for s_col in status_cols}
-    s_summary_dict.update(indv_year_statuses)
-    status_summary = pd.DataFrame(
-        s_summary_dict, index=[idx for idx in range(len(years_of_interest))]
-    )
+    status_summary = create_empty_summary(status_cols, years_of_interest)
 
     # creates empty summary table to hold 'missingness' and consistency data for each unit column and year
-    u_summary_dict = {"Data (Year)": "blank"}
-    indv_year_units = {u_col: False for u_col in unit_cols}
-    u_summary_dict.update(indv_year_units)
-    unit_summary = pd.DataFrame(
-        u_summary_dict, index=[idx for idx in range(len(years_of_interest))]
-    )
+    unit_summary = create_empty_summary(unit_cols, years_of_interest)
 
     return None

@@ -136,6 +136,35 @@ def split_column_types(reference_cols, status_str="status", unit_str="unit"):
     return measurement_cols, status_cols, unit_cols
 
 
+def create_empty_summary(summary_cols, years_of_interest):
+    """
+    Returns empty summary table to hold 'missingness' and consistency data for an input set of columns.
+
+    Parameters
+    ----------
+    summary_cols : list of str
+        The full list of column titles for which a summary DataFrame will be created.
+    years_of_interest : list of int
+        The years of data that are of interest, used to define how many rows are required in the summary DataFrame.
+
+    Returns
+    -------
+    summary_df : pandas.DataFrame
+        A DataFrame with the first column reporting each year of interest; subsequent columns correspond to each input
+        column and contain value = False for all rows; this summary df can later be populated by looping through years
+        of interest and their available columns: updating values in the summary df to True where that combination of
+        year and column title exists.
+    """
+    summary_dict = {"Data (Year)": "blank"}
+    missing_column_placeholders = {col: False for col in summary_cols}
+    summary_dict.update(missing_column_placeholders)
+    summary_df = pd.DataFrame(
+        summary_dict, index=[idx for idx in range(len(years_of_interest))]
+    )
+
+    return summary_df
+
+
 def rename_status_and_unit_columns(
     input_df, status_str="status", unit_str="unit", status_offset=-1, unit_offset=-2
 ):
