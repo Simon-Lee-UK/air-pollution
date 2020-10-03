@@ -69,6 +69,40 @@ def get_reference_columns(
     return None
 
 
+def split_column_types(reference_cols, status_str="status", unit_str="unit"):
+    """
+    Splits input list of column titles into separate lists for measurement columns, status columns and unit columns.
+
+    Parameters
+    ----------
+    reference_cols : List of str
+        A list of all column titles for an air pollution DataFrame.
+    status_str : str
+        The consistent string appearing in all metadata column titles that contain status information for a
+        corresponding measurement column; default value = 'status'.
+    unit_str : str
+        The consistent string appearing in all metadata column titles that contain the unit associated with a
+        corresponding measurement column; default value = 'unit'.
+
+    Returns
+    -------
+    measurement_cols : list of str
+        A list of column titles for those columns containing measurement values.
+    status_cols : list of str
+        A list of column titles for those columns containing status information related to a corresponding measurement
+        column's values.
+    unit_cols : list of str
+        A list of column titles for those columns containing the measurement unit for a corresponding measurement
+        column's values.
+    """
+    status_cols = [col for col in reference_cols if status_str in col]
+    unit_cols = [col for col in reference_cols if unit_str in col]
+    measurement_cols = [
+        col for col in reference_cols if col not in status_cols and col not in unit_cols
+    ]
+    return measurement_cols, status_cols, unit_cols
+
+
 def rename_status_and_unit_columns(
     input_df, status_str="status", unit_str="unit", status_offset=-1, unit_offset=-2
 ):
