@@ -50,8 +50,8 @@ this can then be compared to the actual readings gathered in 2020.
   
 ## License
 The code in this project is licensed under the [MIT License](https://choosealicense.com/licenses/mit/). 
-See [LICENSE.txt](./LICENSE.txt) for details.
 
 The air pollution data accessed in this project is licensed under the 
-[Open Government Licence (OGL).](http://www.nationalarchives.gov.uk/doc/open-government-licence/version/2/)
-See [LICENSE.txt](./LICENSE.txt) for details.
+[Open Government Licence (OGL).](http://www.nationalarchives.gov.uk/doc/open-government-licence/version/2/)  
+  
+See [LICENSE.txt](./LICENSE.txt) for full licensing details.

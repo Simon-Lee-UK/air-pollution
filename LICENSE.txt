@@ -30,4 +30,5 @@ for environment, food and rural affairs at https://uk-air.defra.gov.uk/.
 © Crown 2020 copyright Defra via uk-air.defra.gov.uk,
 licenced under the Open Government Licence (OGL).
 
-OGL details are available at: http://www.nationalarchives.gov.uk/doc/open-government-licence/version/2/
+OGL details are available at:
+http://www.nationalarchives.gov.uk/doc/open-government-licence/version/2/
