@@ -8,7 +8,11 @@ from src.process_data import (
     split_column_types,
     rename_status_and_unit_columns,
 )
-from src.summary_plots import plot_measurement_summary
+from src.summary_plots import (
+    plot_measurement_summary,
+    plot_status_summary,
+    plot_unit_summary,
+)
 
 sleep_duration = 0.75
 
@@ -193,6 +197,14 @@ def monitoring_site_summary(
     # creates empty summary table to hold 'missingness' and consistency data for each unit column and year
     unit_summary = create_empty_summary(unit_cols, years_of_interest, year_col_title)
 
+    # creates empty DataFrames to store count of unique status/unit values for each column-year combination
+    unique_status_counts = create_empty_summary(
+        status_cols, years_of_interest, year_col_title
+    )
+    unique_unit_counts = create_empty_summary(
+        unit_cols, years_of_interest, year_col_title
+    )
+
     data_dict = (
         {}
     )  # creates an empty dictionary that will be filled with full DataFrames of data for each year
@@ -220,6 +232,14 @@ def monitoring_site_summary(
             )
             unit_summary = mark_invalid_year(
                 unit_summary, indv_year, idx, year_col_title
+            )
+
+            # where data could not be accessed, marks summary count DataFrames accordingly with: '0.0'
+            unique_status_counts = mark_invalid_year(
+                unique_status_counts, indv_year, idx, year_col_title, count_only=True
+            )
+            unique_unit_counts = mark_invalid_year(
+                unique_unit_counts, indv_year, idx, year_col_title, count_only=True
             )
         else:
             single_year = rename_status_and_unit_columns(
@@ -251,15 +271,40 @@ def monitoring_site_summary(
                 unit_summary, indv_year, idx, single_year, sy_unit_cols, year_col_title
             )
 
+            unique_status_counts = fill_status_summary_row(
+                unique_status_counts,
+                indv_year,
+                idx,
+                single_year,
+                sy_status_cols,
+                year_col_title,
+                count_only=True,
+            )
+            unique_unit_counts = fill_unit_summary_row(
+                unique_unit_counts,
+                indv_year,
+                idx,
+                single_year,
+                sy_unit_cols,
+                year_col_title,
+                count_only=True,
+            )
+
             data_dict[indv_year] = single_year
 
         time.sleep(
             sleep_duration
         )  # creates interval between requests to uk-air.defra.gov.uk
 
+    # fills NaN values in summary tables where reference year's columns did not cover all possible columns across years
     measurement_summary.fillna(value=False, inplace=True)
+    unique_status_counts.fillna(value=0.0, inplace=True)
+    unique_unit_counts.fillna(value=0.0, inplace=True)
 
+    # plots heatmap representations of the summary tables
     plot_measurement_summary(measurement_summary, year_col_title)
+    plot_status_summary(unique_status_counts, year_col_title)
+    plot_unit_summary(unique_unit_counts, year_col_title)
 
     return data_dict, measurement_summary, status_summary, unit_summary
 
@@ -295,7 +340,9 @@ def create_empty_summary(summary_cols, years_of_interest, year_col_title):
     return summary_df
 
 
-def mark_invalid_year(input_summary, invalid_year, row_idx, year_col_title):
+def mark_invalid_year(
+    input_summary, invalid_year, row_idx, year_col_title, count_only=False
+):
     """
     Returns summary table updated to report 'no data' for measurement/status/unit columns for an input 'invalid_year'.
 
@@ -310,16 +357,24 @@ def mark_invalid_year(input_summary, invalid_year, row_idx, year_col_title):
         The row index corresponding to the invalid/inaccessible year of data in the summary DataFrame.
     year_col_title : str
         The title of the summary DataFrame's column reporting years of interest.
+    count_only : bool
+        Boolean flag controlling output type, False populates each column for the invalid input year of data with
+        the 'invalid_year_str' string; True instead populates the summary table elements with an integer value of zero;
+        default argument value = False.
 
     Returns
     -------
     output_summary : pandas.DataFrame
-        The input summary DataFrame updated to report 'no data' for all possible measurement/status/unit columns in
-        the invalid/inaccessible year of data.
+        If 'count_only' = False, the input summary DataFrame is updated to report 'no data' for all possible
+        measurement/status/unit columns in the invalid/inaccessible year of data. If 'count_only' = True, the input
+        summary DataFrame is updated to report zero as an integer instead: this is used for status/unit summary plots.
     """
     invalid_year_str = "no data"  # defines consistent value for elements in summary table where year of data is missing
     output_summary = input_summary.copy()
-    output_summary.loc[row_idx, :] = invalid_year_str
+    if count_only:
+        output_summary.loc[row_idx, :] = 0.0
+    else:
+        output_summary.loc[row_idx, :] = invalid_year_str
     output_summary.loc[row_idx, year_col_title] = invalid_year
 
     return output_summary
@@ -361,7 +416,13 @@ def fill_measurement_summary_row(
 
 
 def fill_status_summary_row(
-    input_summary, year, row_idx, single_year_data, status_cols, year_col_title
+    input_summary,
+    year,
+    row_idx,
+    single_year_data,
+    status_cols,
+    year_col_title,
+    count_only=False,
 ):
     """
     Using the status columns for a single year of data, populates that year's row in the status summary table.
@@ -380,35 +441,50 @@ def fill_status_summary_row(
         A list of all status column titles appearing in the data set for the single input year.
     year_col_title : str
         The title of the summary DataFrame's column reporting years of interest.
+    count_only : bool
+        Boolean flag controlling output type, True outputs the unique value count (excl. NaN) for each status column in
+        the input year of data; False outputs verbose information quoting consistent column values and presence/absence
+        of NaN values; default argument value = False.
 
     Returns
     -------
     output_summary : pandas.DataFrame
-        The input summary DataFrame updated for the input year to report:
+        The input summary DataFrame updated for the input year to report (when count_only=False):
             - The single status value observed in a column (if only a single value is observed in that column)
             - The number of different status values observed in a column (if > 1 values are observed in that column)
             - The presence of NaN values in otherwise single-valued columns
+        When count_only=True, DataFrame is updated for the input year to report the number of unique status values in
+        each column.
     """
     output_summary = input_summary.copy()
     output_summary.loc[row_idx, year_col_title] = year
     for col in status_cols:
         unique_count = single_year_data[col].nunique(dropna=True)
-        unique_count_with_nan = single_year_data[col].nunique(dropna=False)
-        if unique_count == 1 and unique_count_with_nan == 2:
-            single_real_value = single_year_data.loc[
-                single_year_data[col].first_valid_index(), col
-            ]  # extracts the first non-NaN value from the column
-            output_summary.loc[row_idx, col] = f"{single_real_value}  (+ NaNs)"
-        elif unique_count == 1 and unique_count_with_nan == 1:
-            output_summary.loc[row_idx, col] = single_year_data.loc[0, col]
+        if count_only:
+            output_summary.loc[row_idx, col] = float(unique_count)
         else:
-            output_summary.loc[row_idx, col] = f"{unique_count} different values"
+            unique_count_with_nan = single_year_data[col].nunique(dropna=False)
+            if unique_count == 1 and unique_count_with_nan == 2:
+                single_real_value = single_year_data.loc[
+                    single_year_data[col].first_valid_index(), col
+                ]  # extracts the first non-NaN value from the column
+                output_summary.loc[row_idx, col] = f"{single_real_value}  (+ NaNs)"
+            elif unique_count == 1 and unique_count_with_nan == 1:
+                output_summary.loc[row_idx, col] = single_year_data.loc[0, col]
+            else:
+                output_summary.loc[row_idx, col] = f"{unique_count} different values"
 
     return output_summary
 
 
 def fill_unit_summary_row(
-    input_summary, year, row_idx, single_year_data, unit_cols, year_col_title
+    input_summary,
+    year,
+    row_idx,
+    single_year_data,
+    unit_cols,
+    year_col_title,
+    count_only=False,
 ):
     """
     Using the unit columns for a single year of data, populates that year's row in the unit summary table.
@@ -427,28 +503,37 @@ def fill_unit_summary_row(
         A list of all unit column titles appearing in the data set for the single input year.
     year_col_title : str
         The title of the summary DataFrame's column reporting years of interest.
+    count_only : bool
+        Boolean flag controlling output type, True outputs the unique value count (excl. NaN) for each unit column in
+        the input year of data; False outputs verbose information quoting consistent column values and presence/absence
+        of NaN values; default argument value = False.
 
     Returns
     -------
     output_summary : pandas.DataFrame
-        The input summary DataFrame updated for the input year to report:
+        The input summary DataFrame updated for the input year to report (when count_only=False):
             - The single unit value observed in a column (if only a single value is observed in that column)
             - The number of different unit values observed in a column (if > 1 values are observed in that column)
             - The presence of NaN values in otherwise single-valued columns
+        When count_only=True, DataFrame is updated for the input year to report the number of unique unit values in
+        each column.
     """
     output_summary = input_summary.copy()
     output_summary.loc[row_idx, year_col_title] = year
     for col in unit_cols:
         unique_count = single_year_data[col].nunique(dropna=True)
-        unique_count_with_nan = single_year_data[col].nunique(dropna=False)
-        if unique_count == 1 and unique_count_with_nan == 2:
-            single_real_value = single_year_data.loc[
-                single_year_data[col].first_valid_index(), col
-            ]  # extracts the first non-NaN value from the column
-            output_summary.loc[row_idx, col] = f"{single_real_value}  (+ NaNs)"
-        elif unique_count == 1 and unique_count_with_nan == 1:
-            output_summary.loc[row_idx, col] = single_year_data.loc[0, col]
+        if count_only:
+            output_summary.loc[row_idx, col] = float(unique_count)
         else:
-            output_summary.loc[row_idx, col] = f"{unique_count} different values"
+            unique_count_with_nan = single_year_data[col].nunique(dropna=False)
+            if unique_count == 1 and unique_count_with_nan == 2:
+                single_real_value = single_year_data.loc[
+                    single_year_data[col].first_valid_index(), col
+                ]  # extracts the first non-NaN value from the column
+                output_summary.loc[row_idx, col] = f"{single_real_value}  (+ NaNs)"
+            elif unique_count == 1 and unique_count_with_nan == 1:
+                output_summary.loc[row_idx, col] = single_year_data.loc[0, col]
+            else:
+                output_summary.loc[row_idx, col] = f"{unique_count} different values"
 
     return output_summary
