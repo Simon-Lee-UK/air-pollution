@@ -8,6 +8,7 @@ from src.process_data import (
     split_column_types,
     rename_status_and_unit_columns,
 )
+from src.summary_plots import plot_measurement_summary
 
 sleep_duration = 0.75
 
@@ -177,7 +178,7 @@ def monitoring_site_summary(
         reference_cols, status_str=status_str, unit_str=unit_str
     )  # from all reference columns, returns separate lists of measurement, status and unit columns
 
-    year_col_title = "Data (Year)"  # defines the column title for column holding data years in summary tables
+    year_col_title = "Data Set (Year)"  # defines the column title for column holding data years in summary tables
 
     # creates empty summary table to hold 'missingness' data for each measurement column and year
     measurement_summary = create_empty_summary(
@@ -257,6 +258,8 @@ def monitoring_site_summary(
         )  # creates interval between requests to uk-air.defra.gov.uk
 
     measurement_summary.fillna(value=False, inplace=True)
+
+    plot_measurement_summary(measurement_summary, year_col_title)
 
     return data_dict, measurement_summary, status_summary, unit_summary
 
