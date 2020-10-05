@@ -47,7 +47,7 @@ def plot_measurement_summary(measurement_summary, year_col_title):
         cmap=missingness_cmap,
         square=True,
         linewidths=1,
-        # cbar_kws={"shrink": 0.5},
+        cbar_kws={"shrink": 0.5},
     )
     ax.set_title("Available Measurement Columns per Year", fontsize=18)
     colorbar = ax.collections[0].colorbar
@@ -83,7 +83,7 @@ def plot_status_summary(unique_status_counts, year_col_title):
         cmap=unique_count_cmap,
         square=True,
         linewidths=1,
-        # cbar_kws={"shrink": 0.5},
+        cbar_kws={"shrink": 0.5},
     )
     ax.set_title("Unique Status Column Values per Year", fontsize=18)
     colorbar = ax.collections[0].colorbar
@@ -119,7 +119,7 @@ def plot_unit_summary(unique_unit_counts, year_col_title):
         cmap=unique_count_cmap,
         square=True,
         linewidths=1,
-        # cbar_kws={"shrink": 0.5},
+        cbar_kws={"shrink": 0.5},
     )
     ax.set_title("Unique Unit Column Values per Year", fontsize=18)
     colorbar = ax.collections[0].colorbar
