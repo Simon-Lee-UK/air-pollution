@@ -48,6 +48,7 @@ def get_single_year(
         return single_year
     except:
         print(
+            "\n"
             f"-------\n"
             f"WARNING\n"
             f"-------\n"

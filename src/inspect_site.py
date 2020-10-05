@@ -298,7 +298,9 @@ def monitoring_site_summary(
 
     # fills NaN values in summary tables where reference year's columns did not cover all possible columns across years
     measurement_summary.fillna(value=False, inplace=True)
+    unique_status_counts.replace(to_replace=False, value=0.0, inplace=True)
     unique_status_counts.fillna(value=0.0, inplace=True)
+    unique_unit_counts.replace(to_replace=False, value=0.0, inplace=True)
     unique_unit_counts.fillna(value=0.0, inplace=True)
 
     # plots heatmap representations of the summary tables
