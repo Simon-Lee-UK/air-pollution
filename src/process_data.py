@@ -2,7 +2,7 @@ import time
 import pandas as pd
 from src.raw_data import get_single_year
 
-sleep_duration = 0.75
+SLEEP_DURATION = 0.75
 
 
 def get_reference_columns(
@@ -92,7 +92,7 @@ def get_reference_columns(
             return reference_cols
         else:
             time.sleep(
-                sleep_duration
+                SLEEP_DURATION
             )  # creates interval between requests to uk-air.defra.gov.uk
 
     raise ValueError(

@@ -4,21 +4,21 @@ import seaborn as sns
 
 sns.set(font_scale=1.4)  # default text size
 
-missingness_cmap_colours = [
+MISSINGNESS_CMAP_COLOURS = [
     "#2E332F",
     "#93DF9D",
 ]  # defines two colours to illustrate available vs. missing data
-missingness_cmap = LinearSegmentedColormap.from_list(
-    "Custom", missingness_cmap_colours, len(missingness_cmap_colours)
+MISSINGNESS_CMAP = LinearSegmentedColormap.from_list(
+    "Custom", MISSINGNESS_CMAP_COLOURS, len(MISSINGNESS_CMAP_COLOURS)
 )  # uses the available/missing data colours to define a new custom colourmap
 
-unique_count_cmap_colours = [
+UNIQUE_COUNT_CMAP_COLOURS = [
     "#2E332F",
     "#93DF9D",
     "#896EC4",
 ]  # defines three colours to illustrate 0, 1, >1 unique values in a particular combination of column and year
-unique_count_cmap = LinearSegmentedColormap.from_list(
-    "Custom", unique_count_cmap_colours, len(unique_count_cmap_colours)
+UNIQUE_COUNT_CMAP = LinearSegmentedColormap.from_list(
+    "Custom", UNIQUE_COUNT_CMAP_COLOURS, len(UNIQUE_COUNT_CMAP_COLOURS)
 )  # uses the 0 unique, 1, >1 colours to define a new custom colourmap
 
 
@@ -44,7 +44,7 @@ def plot_measurement_summary(measurement_summary, year_col_title):
     ax.tick_params(axis="both", labelsize=13)
     sns.heatmap(
         plot_df,
-        cmap=missingness_cmap,
+        cmap=MISSINGNESS_CMAP,
         square=True,
         linewidths=1,
         cbar_kws={"shrink": 0.5},
@@ -80,7 +80,7 @@ def plot_status_summary(unique_status_counts, year_col_title):
     ax.tick_params(axis="both", labelsize=13)
     sns.heatmap(
         plot_df,
-        cmap=unique_count_cmap,
+        cmap=UNIQUE_COUNT_CMAP,
         square=True,
         linewidths=1,
         cbar_kws={"shrink": 0.5},
@@ -116,7 +116,7 @@ def plot_unit_summary(unique_unit_counts, year_col_title):
     ax.tick_params(axis="both", labelsize=13)
     sns.heatmap(
         plot_df,
-        cmap=unique_count_cmap,
+        cmap=UNIQUE_COUNT_CMAP,
         square=True,
         linewidths=1,
         cbar_kws={"shrink": 0.5},

@@ -14,7 +14,7 @@ from src.summary_plots import (
     plot_unit_summary,
 )
 
-sleep_duration = 0.75
+SLEEP_DURATION = 0.75
 
 
 def preview_data(
@@ -93,7 +93,7 @@ def preview_data(
             pass  # once a set of preview data has been defined, it is not re-defined on subsequent loops
 
         time.sleep(
-            sleep_duration
+            SLEEP_DURATION
         )  # creates interval between requests to uk-air.defra.gov.uk
 
     assert preview_data is not None, (
@@ -293,7 +293,7 @@ def monitoring_site_summary(
             data_dict[indv_year] = single_year
 
         time.sleep(
-            sleep_duration
+            SLEEP_DURATION
         )  # creates interval between requests to uk-air.defra.gov.uk
 
     # fills NaN values in summary tables where reference year's columns did not cover all possible columns across years
